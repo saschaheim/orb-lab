@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07080d">
-<title>Orb Lab — Living Matter / iPhone Live Debug v3</title>
+<title>Orb Lab — The Impossible Core · WebGL Study 004</title>
 <style>
   :root { color-scheme: dark; --muted: #9a9da9; --line: rgba(255,255,255,.10); --accent: #d6c7ff; }
   * { box-sizing: border-box; }
@@ -110,12 +110,12 @@
 <div class="ui">
   <header>
     <div><div class="brand">ORB LAB</div><span class="kicker">Generative Matter Experiments</span></div>
-    <div class="edition">EXPERIMENT 002<br>REAL-TIME GENERATIVE MATTER</div>
+    <div class="edition">EXPERIMENT 004<br>REAL-TIME GENERATIVE MATTER</div>
   </header>
   <main class="center">
-    <p class="intro">MUSIC BECOMES MATTER</p>
-    <h1>Nicht animiert. Lebendig.</h1>
-    <p class="subtitle">Eine eigenständige Materie aus Strömungen, Licht und Klang. Tippe auf den Orb – oder gib ihm Musik.</p>
+    <p class="intro">A NEW KIND OF MATTER</p>
+    <h1>The Impossible Core.</h1>
+    <p class="subtitle">Eine fremdartige Materie aus innerer Strömung, Spannung und Licht. Berühre den Kern oder speise Musik ein.</p>
   </main>
   <aside id="debugPanel" role="region" aria-label="Sichtbare Live-Diagnose">
     <div class="debugHeading"><strong>LIVE DEBUG · IMMER SICHTBAR</strong><small>iPhone / WebGL / Canvas</small></div>
@@ -168,7 +168,7 @@ function refreshStats(){
 window.addEventListener('error',e=>report('ERROR',e.message+' @ '+(e.filename||'inline')+':'+(e.lineno||'?')));
 window.addEventListener('unhandledrejection',e=>report('ERROR','Promise: '+(e.reason?.stack||e.reason?.message||String(e.reason))));
 $('debugRestart').onclick=()=>location.reload();
-function getReport(){return ['ORB LAB / LIVING MATTER DIAG','Timestamp: '+new Date().toISOString(),'Engine: '+renderer,'Status: '+(engineError||'OK'),'FPS: '+(fps?fps.toFixed(0):'Warte auf Frames'),'GPU: '+$('dGpu').textContent,'Canvas: '+(renderer==='Canvas 2D'?fb.width+'x'+fb.height:canvas.width+'x'+canvas.height),'Viewport: '+innerWidth+'x'+innerHeight,'Page protocol: '+location.protocol,'Secure: '+window.isSecureContext,'Audio: '+mode+(audioContext?' / '+audioContext.state:''),'UA: '+navigator.userAgent,'DPR: '+devicePixelRatio,'--- Log ---',...logLines].join('\n');}
+function getReport(){return ['ORB LAB / IMPOSSIBLE CORE DIAG','Timestamp: '+new Date().toISOString(),'Engine: '+renderer,'Status: '+(engineError||'OK'),'FPS: '+(fps?fps.toFixed(0):'Warte auf Frames'),'GPU: '+$('dGpu').textContent,'Canvas: '+(renderer==='Canvas 2D'?fb.width+'x'+fb.height:canvas.width+'x'+canvas.height),'Viewport: '+innerWidth+'x'+innerHeight,'Page protocol: '+location.protocol,'Secure: '+window.isSecureContext,'Audio: '+mode+(audioContext?' / '+audioContext.state:''),'UA: '+navigator.userAgent,'DPR: '+devicePixelRatio,'--- Log ---',...logLines].join('\n');}
 $('debugCopy').onclick=async()=>{let t=getReport();try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);}else{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.top='0';ta.style.left='0';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);if(!document.execCommand('copy'))throw Error('Kopieren nicht möglich');ta.remove();}say('Diagnose kopiert – hier in den Chat einfügen.');}catch(e){report('WARN','Copy: '+e.message);const field=$('debugLogs');field.value=t;field.focus();field.select();say('Kopieren blockiert. Den Text in der sichtbaren Box markieren und kopieren.');}};
 function turn2D(reason){
  if(renderer==='Canvas 2D')return;
@@ -191,72 +191,117 @@ uniform vec2 uRes;
 uniform float uTime,uBass,uMid,uHigh,uEnergy,uOnset,uTouch,uSeed,uSensitivity,uQuality;
 uniform vec2 uTouchPos;
 uniform float uScale;
-#define PI 3.14159265359
-float hash31(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}
-float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
-return mix(mix(mix(hash31(i),hash31(i+vec3(1,0,0)),f.x),mix(hash31(i+vec3(0,1,0)),hash31(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash31(i+vec3(0,0,1)),hash31(i+vec3(1,0,1)),f.x),mix(hash31(i+vec3(0,1,1)),hash31(i+vec3(1,1,1)),f.x),f.y),f.z);}
-float fbm(vec3 p){float f=0.,a=.5;for(int i=0;i<4;i++){f+=a*noise(p);p=p*2.03+vec3(12.4,9.1,6.7);a*=.5;}return f;}
-vec3 palette(float h){return .5+.5*cos(6.283185*(vec3(0.,.33333,.66667)+h));}
 float sat(float x){return clamp(x,0.,1.);}
+float h3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+31.32);return fract((p.x+p.y)*p.z);}
+float n3(vec3 p){
+ vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
+ mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);
+}
+mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
+float shape(vec3 p){
+ float t=uTime*.26;vec3 q=p;
+ q.xz=rot(.16*sin(t*.29)+uMid*.13)*q.xz;
+ float belt=sin(q.x*4.2+q.y*3.1+sin(q.z*4.7+t)*1.5-t*.68);
+ float knot=sin(q.z*7.3-q.y*3.8+sin(q.x*5.1-t*.7)*1.8+t*.42);
+ float tide=sin(q.x*2.9-q.z*3.6+t*.6)*sin(q.y*4.1+t*.53);
+ float pressure=.022*uBass*uSensitivity+.010*uOnset;
+ return length(p)-(.902+.034*belt*knot+.018*tide+pressure);
+}
+vec3 normalAt(vec3 p){
+ float e=.005;
+ return normalize(vec3(shape(p+vec3(e,0,0))-shape(p-vec3(e,0,0)),
+ shape(p+vec3(0,e,0))-shape(p-vec3(0,e,0)),
+ shape(p+vec3(0,0,e))-shape(p-vec3(0,0,e))));
+}
+vec3 energyFlow(vec3 q,float t){
+ q.xz=rot(t*.18+.31*sin(q.y*1.7+t*.4))*q.xz;
+ q.xy=rot(-t*.11+.22*cos(q.z*1.3-t*.37))*q.xy;
+ vec3 w=vec3(sin(q.y*3.9+q.z*3.1+t*.42),sin(q.z*4.7-q.x*2.8-t*.5),sin(q.x*3.4+q.y*4.2+t*.36));
+ return q+w*.23;
+}
+vec3 tonemap(vec3 c){c=1.-exp(-max(c,vec3(0.))*1.52);return pow(c,vec3(.91));}
 void main(){
-vec2 uv=vUV-.5;
-vec2 p=(vUV-vec2(.5,.64))*vec2(uRes.x/uRes.y,1.)*uScale;
-float r=length(p),a=atan(p.y,p.x);
-if(r>1.58){frag=vec4(.0044,.005,.009,1.);return;}
-float t=uTime*.21;
-float beat=clamp(uBass*uSensitivity,0.,1.8), hi=clamp(uHigh*uSensitivity,0.,1.5);
-float edgeNoise=noise(vec3(cos(a)*2.15,sin(a)*2.15,t*.65+uSeed));
-float rimR=.955+(edgeNoise-.5)*(.095+uEnergy*.055)+.02*sin(7.*a-t*1.2)+.012*sin(13.*a+t*2.1);
-float z=sqrt(max(0.,rimR*rimR-r*r));
-float inside=1.-smoothstep(rimR-.015,rimR+.012,r);
-vec3 n=normalize(vec3(p,z+.001));
-vec3 pos=vec3(p,z);
-// Two independent moving vector fields twist through one another: never a looped texture.
-vec3 q=pos*1.63+vec3(t*.24,-t*.34,t*.13);
-float warp1=fbm(q*1.38+vec3(0.,t*.3,2.7));
-float warp2=fbm(q*1.41+vec3(13.1,-t*.26,0.));
-vec3 flow=q+vec3(warp1-.5,warp2-.5,warp1-warp2)*(1.45+.25*beat+.16*uMid);
-float fold=fbm(flow*2.1+vec3(t*.17,-t*.14,t*.18));
-float fold2=fbm(flow*3.45-vec3(t*.29,t*.10,8.));
-float stream=sin(flow.y*9.8+flow.x*4.3+fold*12.0-t*1.6);
-float stream2=sin(flow.x*7.3-flow.y*5.4+fold2*11.4+t*.82);
-float silk=pow(1.-abs(stream),8.0);
-float silk2=pow(1.-abs(stream2),12.0);
-float ribbon=smoothstep(.10,.96,stream*.5+.5)*(.50+.5*fold2);
-float clouds=smoothstep(.24,.79,fold*.65+fold2*.5);
-float flowLight = (.13+clouds*.60+silk*1.4+silk2*.92+ribbon*.29) * (1.+.22*uOnset);
-float field=fold*.95+fold2*.62+sin(a*2.2+fold*6.0-t*.5)*.10;
-float hue=.54 + .095*sin(t*.18 + uSeed*1.7) + .10*(field-.6) + .19*sin(a*.75+flow.x*.33+t*.18) + .095*uHigh - .10*uBass;
-vec3 c1=palette(hue);
-vec3 c2=palette(hue+.16);
-vec3 chroma=mix(c1,c2,sat(silk2*.55+fold2*.28));
-float light=max(0.,dot(n,normalize(vec3(-.34,.62,.83))));
-float fresnel=pow(1.-sat(z/max(rimR,.0001)),2.4);
-// Translucent inner core, spectral filaments, dark valleys, opalescent skin.
-float core=exp(-r*r*2.3)*(.36+.35*fold);
-vec3 body=(chroma*(.14+flowLight*.90)+c2*core*.30)*(.34+.50*light);
-body+=palette(hue+.12)*(silk*.39+silk2*.24)*(.5+.45*light);
-body+=mix(vec3(.32,.72,.9),c1,.67)*fresnel*(.38+flowLight*.44);
-body+=vec3(1.,.92,.96)*pow(max(light,0.),19.)*(.045+.11*clouds);
-float ripple=length(p-uTouchPos);
-float wave=exp(-abs(ripple-(.15+uTouch*.63))*19.)*uTouch;
-body+=palette(hue+.13)*wave*.43;
-body*=inside;
-// Exterior scattering aura with subtle, deforming asymmetry.
-float outer=max(0.,r-rimR);
-float halo=exp(-outer*5.7)*(.15+.065*silk+.15*uEnergy)*(1.-smoothstep(.94,1.34,r));
-vec3 color=vec3(.0044,.0050,.0090);
-color+=palette(hue-.035)*halo;
-color+=body;
-// Atmospheric color bleeding in darkness.
-float wide=exp(-r*r*1.0)*.022;
-color+=palette(hue+.07)*wide;
-// Tone-map highlights while preserving bright filament detail.
-color=1.-exp(-color*1.44);
-color=pow(color,vec3(.92));
-// Fine grain reduces color banding on dim screens.
-float grain=(hash31(vec3(gl_FragCoord.xy,uTime))-.5)/255.;
-frag=vec4(color+grain,1.);
+ vec2 p=(vUV-vec2(.5,.64))*vec2(uRes.x/uRes.y,1.)*uScale;
+ float radius=length(p),t=uTime*.34;
+ vec3 bg=vec3(.0021,.0030,.0072);
+ bg+=vec3(.012,.022,.039)*exp(-radius*radius)*.30;
+ float fringe=exp(-max(radius-.84,0.)*6.4)*(1.-smoothstep(.88,1.51,radius));
+ vec3 col=bg+fringe*vec3(.020,.049,.079)*(.58+.42*sin(uTime*.29));
+ vec3 ro=vec3(0.,0.,2.80),rd=normalize(vec3(p,-2.80));
+ float b=dot(ro,rd),h=b*b-dot(ro,ro)+1.13*1.13;
+ if(h<0.){
+   float grain=(h3(vec3(gl_FragCoord.xy,floor(uTime*23.)))-.5)/370.;
+   frag=vec4(tonemap(col)+grain,1.);return;
+ }
+ float travel=max(0.,-b-sqrt(h));
+ bool hit=false;vec3 pos=ro+rd*travel;
+ for(int i=0;i<27;i++){
+   float d=shape(pos);
+   if(d<.0020){hit=true;break;}
+   travel+=clamp(d*.78,.0035,.092);
+   if(travel>4.4)break;
+   pos=ro+rd*travel;
+ }
+ if(!hit){frag=vec4(tonemap(col),1.);return;}
+ vec3 N=normalAt(pos),V=-rd;
+ float ndv=sat(dot(N,V)),fres=pow(1.-ndv,2.8);
+ vec3 lightA=normalize(vec3(-.64,.72,1.10)),lightB=normalize(vec3(.8,-.45,.64));
+ float key=sat(dot(N,lightA)),fill=sat(dot(N,lightB));
+ float spec=pow(sat(dot(reflect(-lightA,N),V)),35.);
+ float specB=pow(sat(dot(reflect(-lightB,N),V)),83.);
+ vec3 q=energyFlow(pos*1.84+vec3(0.,t*.21,0.),t);
+ float turbulence=n3(q*2.35+vec3(t*.15,-t*.12,0.));
+ float undertow=n3(q*4.5+vec3(9.7,-t*.24,3.));
+ float ribbons=sin(q.y*11.2+q.x*6.4+sin(q.z*5.3-t)*3.8-t*2.1);
+ float ribbons2=sin(q.z*14.2-q.y*7.3+sin(q.x*5.2+t*.7)*3.7+t*.9);
+ float seam=pow(1.-abs(ribbons),24.),fine=pow(1.-abs(ribbons2),45.);
+ float basin=sat(.55*turbulence+.34*undertow+.10);
+ float cavity=pow(sat(.72-basin),1.7);
+ vec3 obsidian=vec3(.008,.017,.035),midnight=vec3(.021,.042,.084),abyssBlue=vec3(.034,.095,.174);
+ vec3 coolSilver=vec3(.28,.57,.68),violet=vec3(.205,.105,.28),spectral=vec3(.08,.73,.76),honey=vec3(.98,.57,.19);
+ vec3 material=mix(obsidian,midnight,sat(.16+basin*1.45));
+ material=mix(material,abyssBlue,pow(basin,2.)*.74);
+ material*=.54+.68*key+.20*fill;
+ material*=1.-.60*cavity;
+ material+=violet*.14*pow(sat(1.-basin),3.);
+ float torsion=sat(.5+.5*sin(q.x*2.9-q.z*2.7+t*.34));
+ material+=coolSilver*(seam*.13+fine*.075)*(.28+.72*key);
+ material+=spectral*(seam*.27+fine*.14)*(mix(.6,1.5,torsion))*(.27+.73*key);
+ vec3 volume=vec3(0.);float density=0.;
+ for(int j=0;j<10;j++){
+   if(uQuality<.5 && j>=6)break;
+   float jx=float(j);
+   vec3 s=pos+rd*(.10+jx*.145);
+   float body=sat((.92-length(s))*15.);
+   if(body<.01)continue;
+   vec3 f=energyFlow(s*2.36+vec3(2.1,-t*.4,0.),t*.95);
+   float waveA=sin(f.x*12.4+f.z*8.7+sin(f.y*6.4+t)*4.8-t*1.7);
+   float waveB=sin(f.y*16.5-f.x*8.2+cos(f.z*5.4-t*.6)*4.3+t*1.2);
+   float sheet=exp(-pow(abs(waveA)*8.0,1.2));
+   float capillary=exp(-pow(abs(waveB)*11.0,1.25));
+   float luminance=body*exp(-jx*.19)*(sheet*.53+capillary*.31);
+   float pulse=.74+.26*sin(f.x*2.0+t*1.3);
+   volume+=(spectral*(.7+.45*pulse)+violet*.34)*luminance;
+   volume+=honey*pow(sheet*capillary,1.35)*body*.25;
+   density+=luminance;
+ }
+ volume*=.32+uEnergy*.25*uSensitivity;
+ material=mix(material,material*.40,.24*sat(density));
+ material+=volume*(.46+.36*fres+.36*sat(1.-ndv));
+ float interference=.5+.5*cos((1.-ndv)*14.0+undertow*4.0+uTime*.15);
+ vec3 film=mix(vec3(.10,.61,.71),vec3(.59,.27,.73),interference);
+ material+=film*fres*(.15+.18*turbulence+.13*uHigh*uSensitivity);
+ material+=coolSilver*(spec*.19+specB*.09);
+ material+=spectral*pow(fres,2.)*.18;
+ float scar=pow(1.-abs(sin(q.x*9.1-q.y*10.3+undertow*13.2+t*.7)),53.);
+ material+=honey*scar*seam*(.02+.11*uOnset+.10*uTouch);
+ float tapDistance=length(p-uTouchPos);
+ float tapWave=exp(-abs(tapDistance-(.18+(1.-uTouch)*.60))*34.)*uTouch;
+ material+=vec3(.35,.73,.88)*tapWave*.36;
+ col+=material+vec3(.032,.080,.11)*fres*.10;
+ float grain=(h3(vec3(gl_FragCoord.xy,floor(uTime*23.)))-.5)/360.;
+ frag=vec4(tonemap(col)+grain,1.);
 }`;
 function compile(g,type,src){const shader=g.createShader(type);g.shaderSource(shader,src);g.compileShader(shader);if(!g.getShaderParameter(shader,g.COMPILE_STATUS)){const msg=g.getShaderInfoLog(shader)||'Unbekannter GLSL-Fehler';g.deleteShader(shader);throw Error((type===g.FRAGMENT_SHADER?'Fragment':'Vertex')+' Shader: '+msg);}return shader;}
 function initGL(){
