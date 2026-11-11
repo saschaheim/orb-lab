@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - '.github/workflows/capture-blueyard.yml'
+      - 'tools/capture-blueyard.mjs'
   workflow_dispatch:
 
 permissions:
