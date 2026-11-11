@@ -148,6 +148,14 @@ def main():
         fixed = chunk.replace('Bt="/cdn.sanity.io/images"', 'Bt="/orb-lab/cdn.sanity.io/images"')
         if fixed != chunk:
             nuxt_image_chunk.write_text(fixed, encoding="utf-8")
+    # Use a new module URL to bypass previously cached Nuxt image code.
+    image_map = '<script type="importmap" id="orb-lab-image-importmap">{"imports":{"/orb-lab/_nuxt/DNrMv7f2.js":"/orb-lab/_nuxt/DNrMv7f2.orblab.js"}}</script>'
+    if "orb-lab-image-importmap" not in html:
+        html = html.replace('<meta charset="utf-8">', '<meta charset="utf-8">\\n' + image_map)
+    html = html.replace('href="/orb-lab/_nuxt/DNrMv7f2.js"', 'href="/orb-lab/_nuxt/DNrMv7f2.orblab.js"')
+    original_image_module = ROOT / "_nuxt" / "DNrMv7f2.js"
+    if original_image_module.is_file():
+        (ROOT / "_nuxt" / "DNrMv7f2.orblab.js").write_bytes(original_image_module.read_bytes())
     # The HTML itself must use the local Nuxt entrypoint and locally downloaded images.
     if FAILURES:
         (ROOT / "blueyard-capture-report.json").write_text(
