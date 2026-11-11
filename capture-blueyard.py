@@ -24,13 +24,13 @@ ALLOWED = {"blueyard.com", "www.blueyard.com", "cdn.sanity.io"}
 MAX_FILES = 1500
 MAX_BYTES = 35 * 1024 * 1024
 URL_RX = re.compile(
-    r"https?://(?:www\\.)?blueyard\\.com/[^\\s\\\"'<>\\x60)]+"
-    r"|https?://cdn\\.sanity\\.io/[^\\s\\\"'<>\\x60)]+"
-    r"|/(?:orb-lab/)?(?:_nuxt|countries|cdn\\.sanity\\.io)/[^\\s\\\"'<>\\x60)]+"
-    r"|/(?:orb-lab/)?_payload\\.json(?:\\?[^\\s\\\"'<>\\x60)]+)?"
+    r"""https?://(?:www\.)?blueyard\.com/[^\s"'<>`)]+"
+    r"""|https?://cdn\.sanity\.io/[^\s"'<>`)]+"
+    r"""|/(?:orb-lab/)?(?:_nuxt|countries|cdn\.sanity\.io)/[^\s"'<>`)]+"
+    r"""|/(?:orb-lab/)?_payload\.json(?:\?[^\s"'<>`)] +)?""".replace("] +", "]+")
 )
-CSS_URL_RX = re.compile(r"url\\(\\s*['\\\"]?([^)'\\\"]+)")
-IMPORT_RX = re.compile(r"(?:from\\s*|import\\s*\\(|import\\s*)['\\\"]([^'\\\"]+)['\\\"]")
+CSS_URL_RX = re.compile(r"""url\(\s*['"]?([^)'" ]+)""")
+IMPORT_RX = re.compile(r"""(?:from\s*|import\s*\(|import\s*)['"]([^'"]+)['"]""")
 FAILURES = []
 queue = deque()
 seen = set()
