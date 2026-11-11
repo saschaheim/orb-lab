@@ -59,10 +59,11 @@ function normalize() {
   if(bounds.isEmpty())throw new Error("Das Modell enthält keine darstellbare Geometrie");
   const center=bounds.getCenter(new THREE.Vector3());
   const size=bounds.getSize(new THREE.Vector3());
-  root.position.sub(center);
   const radius=Math.max(size.x,size.y,size.z);
   if(!Number.isFinite(radius) || radius<=0)throw new Error("Ungültige Modellabmessungen");
-  root.scale.setScalar(2.15/radius);
+  const scale=2.15/radius;
+  root.scale.setScalar(scale);
+  root.position.copy(center).multiplyScalar(-scale);
   camera.position.set(0,0,4.6);
   camera.lookAt(0,0,0);
 }
