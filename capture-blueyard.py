@@ -37,6 +37,9 @@ seen = set()
 
 def remote_url(raw: str, parent: str = "https://blueyard.com/") -> str | None:
     raw = raw.replace("&amp;", "&").strip()
+    # JavaScript template expressions are not downloadable filenames.
+    if "${" in raw or any(c in raw for c in ("\\x60", "{", "}", "\\n", "\\r")):
+        return None
     if raw.startswith("data:") or raw.startswith("#"):
         return None
     if raw.startswith("/orb-lab/"):
@@ -46,6 +49,12 @@ def remote_url(raw: str, parent: str = "https://blueyard.com/") -> str | None:
     url = urljoin(parent, raw)
     parts = urlsplit(url)
     if parts.hostname not in ALLOWED:
+        return None
+    # Reject directory paths and broken matches found in minified JS bundles.
+    filename = parts.path.rsplit("/", 1)[-1]
+    if not filename or "." not in filename or filename.startswith("."):
+        return None
+    if any(ch in parts.path for ch in ("$", "(", ")", ";", ",", "\\", " ")):
         return None
     if not (parts.path.startswith(("/_nuxt/", "/countries/", "/images/", "/_payload.json")) or parts.hostname == "cdn.sanity.io"):
         return None
@@ -95,7 +104,10 @@ def main():
     while queue and len(seen) <= MAX_FILES:
         url = queue.popleft()
         dest = local_path(url)
-        if dest.exists() and dest.stat().st_size > 0:
+        if dest.is_dir():
+            # A previous malformed discovery may have created this folder.
+            continue
+        if dest.is_file() and dest.stat().st_size > 0:
             data = dest.read_bytes()
         else:
             try:
