@@ -13,7 +13,8 @@ import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { resolve, extname, join } from 'node:path';
 import { createHash } from 'node:crypto';
-const root=resolve(import.meta.dirname || new URL('..',import.meta.url).pathname,'..');
+import { fileURLToPath } from 'node:url';
+const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const output=join(root,'webgl/original-shaders');
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.glb':'model/gltf-binary','.ktx2':'image/ktx2','.svg':'image/svg+xml','.woff2':'font/woff2','.jpg':'image/jpeg','.webp':'image/webp'};
 const server=createServer(async(req,res)=>{
@@ -41,7 +42,6 @@ await page.addInitScript(()=>{
     if(!C?.prototype?.shaderSource)continue;
     const old=C.prototype.shaderSource;
     C.prototype.shaderSource=function(shader,source){
-      const type=this.getShaderParameter ? null : null;
       window.__blueyardShaderCapture.push({source:String(source),timestamp:performance.now(),api:k});
       return old.call(this,shader,source);
     };
