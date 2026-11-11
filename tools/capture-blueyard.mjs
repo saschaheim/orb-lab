@@ -39,7 +39,7 @@ context.on('response',response=>{
       if(!/^https?:$/.test(u.protocol)||status<200||status>=400)return;
       if(/google-analytics|doubleclick|hotjar|clarity.ms/i.test(url))return;
       if(Number(response.headers()['content-length']||0)>40000000)return;
-      const data=await response.body();
+      const data=await Promise.race([response.body(),delay(8000).then(()=>{throw Error('Resource body timeout');})]);
       if(!data.length||data.length>40000000)return;
       const ct=response.headers()['content-type']||'';
       const parts=u.pathname.split('/').filter(x=>x&&x!=='.'&&x!=='..').map(x=>x.replace(/[^-_.a-zA-Z0-9]/g,'_'));
@@ -68,7 +68,7 @@ for(let i=0;i<12;i++){
   await page.mouse.wheel(0,520);await delay(1000);
 }
 await delay(2500);
-await Promise.allSettled([...tasks]);
+await Promise.race([Promise.allSettled([...tasks]),delay(11000)]);
 const shaders=await page.evaluate(()=>window.__orbLabShaders||[]);
 await writeFile(join(root,'shaders.json'),JSON.stringify(shaders,null,2));
 await writeFile(join(root,'rendered-dom.html'),await page.content());
