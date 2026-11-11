@@ -100,18 +100,40 @@
     .debugHeading small { font-size: 9px; }
   }
   @media (prefers-reduced-motion: reduce) { .static-orb { animation: none; } }
+
+/* ORB LAB -- Dedicated visualization stage: no text, controls or debug over the orb. */
+.ui { position:relative; z-index:3; min-height:100svh; display:flex; flex-direction:column; pointer-events:auto; }
+header { flex:none; }
+.orb-stage { position:relative; z-index:0; width:100%; height:clamp(330px,56svh,620px); flex:none; isolation:isolate; overflow:hidden; pointer-events:auto; }
+#canvas,#fallbackCanvas { position:absolute; inset:0; width:100%; height:100%; z-index:1; touch-action:manipulation; pointer-events:auto; }
+.static-orb { position:absolute; top:50%; left:50%; width:min(84vw,48svh); max-width:84%; }
+.vignette { display:none !important; }
+.center { flex:none; min-height:0; height:auto; justify-content:flex-start; padding:4px 18px 22px; }
+.bottom,#debugPanel,footer { position:relative; z-index:1; flex:none; }
+#bootNotice { display:none !important; }
+.toast,.toast.on { position:static; left:auto; top:auto; transform:none; margin:0 auto; max-width:min(900px,calc(100% - 36px)); }
+.toast { max-height:0; padding:0; border-width:0; overflow:hidden; }
+.toast.on { max-height:110px; padding:10px 14px; border-width:1px; margin-bottom:12px; }
+@media(max-width:620px) {
+ header { padding-bottom:10px; }
+ .orb-stage { height:clamp(310px,50svh,500px); }
+ .center { height:auto; min-height:0; padding:0 18px 17px; }
+ .static-orb { width:min(84vw,43svh); }
+}
+@media(max-height:620px) { .orb-stage { height:clamp(240px,55svh,370px); } }
 </style>
 </head>
 <body>
-<div class="static-orb" aria-hidden="true"></div>
-<canvas id="canvas" aria-label="Generativer, interaktiver Musik-Orb"></canvas>
-<canvas id="fallbackCanvas" aria-label="2D-Fallback-Orb"></canvas>
-<div class="vignette"></div>
 <div class="ui">
   <header>
     <div><div class="brand">ORB LAB</div><span class="kicker">Generative Matter Experiments</span></div>
     <div class="edition">EXPERIMENT 004<br>REAL-TIME GENERATIVE MATTER</div>
   </header>
+  <section class="orb-stage" id="orbStage" aria-label="Interaktiver Orb ohne überlagernde Bedienelemente">
+    <div class="static-orb" aria-hidden="true"></div>
+    <canvas id="canvas" aria-label="Generativer, interaktiver Musik-Orb"></canvas>
+    <canvas id="fallbackCanvas" aria-label="2D-Fallback-Orb"></canvas>
+  </section>
   <main class="center">
     <p class="intro">A NEW KIND OF MATTER</p>
     <h1>The Impossible Core.</h1>
@@ -141,13 +163,13 @@
   <footer class="foot"><span>PROTOTYPE / GPU + 2D FALLBACK</span><span id="perf">LIVE · GPU RENDERED</span></footer>
 </div>
 <div class="toast" id="toast" role="status"></div>
-<div id="bootNotice">INITIALISIERE ORB …</div>
+<div id="bootNotice" hidden aria-hidden="true"></div>
 <input id="audioFile" type="file" accept="audio/*" hidden>
 <audio id="player" crossorigin="anonymous" playsinline></audio>
 <script>
 (() => {
 'use strict';
-const $=id=>document.getElementById(id), canvas=$('canvas'), fb=$('fallbackCanvas'), start=performance.now();
+const $=id=>document.getElementById(id), canvas=$('canvas'), fb=$('fallbackCanvas'), stage=$('orbStage'), start=performance.now();
 const logLines=[]; let renderer='initializing',engineError='',gl=null,ctx=null,program=null,uni={},glReady=false,live=true;
 let last=performance.now(),time=0, frames=0, fpsTimer=performance.now(),fps=0,scale=1,orbScale=3,quality='auto',touch=0,touchP=[0,0],autoSeed=7.3;
 let mode='auto',stream=null,audioContext=null,analyser=null,sourceNode=null,micNode=null,data=null,playbackURL=null;
@@ -222,7 +244,7 @@ vec3 energyFlow(vec3 q,float t){
 }
 vec3 tonemap(vec3 c){c=1.-exp(-max(c,vec3(0.))*1.52);return pow(c,vec3(.91));}
 void main(){
- vec2 p=(vUV-vec2(.5,.64))*vec2(uRes.x/uRes.y,1.)*uScale;
+ vec2 p=(vUV-vec2(.5,.5))*vec2(uRes.x/uRes.y,1.)*uScale;
  float radius=length(p),t=uTime*.34;
  vec3 bg=vec3(.0021,.0030,.0072);
  bg+=vec3(.012,.022,.039)*exp(-radius*radius)*.30;
@@ -328,7 +350,7 @@ function initGL(){
  }catch(e){glReady=false;report('ERROR',e.message);turn2D('Shader konnte nicht gestartet werden');}
 }
 function resize(){
- const w=window.innerWidth||390,h=window.innerHeight||780;
+ const bounds=stage.getBoundingClientRect();const w=Math.max(1,Math.round(bounds.width)),h=Math.max(1,Math.round(bounds.height));
  let dpr=Math.min(window.devicePixelRatio||1,quality==='high'?1.35:quality==='medium'?1.0:quality==='low'?.65:isMobile?.82:1.0);
  dpr*=scale;
  if(renderer==='Canvas 2D'){
@@ -337,10 +359,10 @@ function resize(){
  }else{
   const gw=Math.max(1,Math.round(w*dpr)),gh=Math.max(1,Math.round(h*dpr));if(canvas.width!==gw||canvas.height!==gh){canvas.width=gw;canvas.height=gh;if(gl)gl.viewport(0,0,gw,gh);}
  }
- orbScale=1.91*h/Math.min(.56*h,.84*w);
+ orbScale=1.91*h/Math.min(.84*h,.84*w);
 }
 window.addEventListener('resize',resize,{passive:true});
-function touchAt(x,y){let a=innerWidth/innerHeight;touchP=[(x/innerWidth-.5)*orbScale*a,(1-y/innerHeight-.64)*orbScale];touch=1;autoSeed+=.13;}
+function touchAt(x,y){const r=stage.getBoundingClientRect();const a=r.width/r.height;touchP=[((x-r.left)/r.width-.5)*orbScale*a,(.5-(y-r.top)/r.height)*orbScale];touch=1;autoSeed+=.13;}
 canvas.addEventListener('pointerdown',e=>touchAt(e.clientX,e.clientY));fb.addEventListener('pointerdown',e=>touchAt(e.clientX,e.clientY));
 function setMode(m,label){mode=m;['auto','mic','file'].forEach(x=>$(x+'Btn').classList.toggle('active',m===x));$('modeLabel').textContent=label;$('statusDot').style.background=m==='mic'?'#f7bba7':m==='file'?'#c5b1ff':'#a7efa8';$('playBtn').hidden=m!=='file';refreshStats();}
 function stopMic(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}if(micNode){micNode.disconnect();micNode=null;}}
@@ -364,7 +386,7 @@ function renderGL(){if(!glReady||!gl)return;gl.useProgram(program);
  if(frames===10){let px=new Uint8Array(4);gl.readPixels(Math.floor(canvas.width*.5),Math.floor(canvas.height*.64),1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);report('INFO','Center pixel RGB '+px[0]+','+px[1]+','+px[2]+', glError '+gl.getError());if(px[0]+px[1]+px[2]<8)report('WARN','Orb-Zentrum sehr dunkel; bei leerem Bild bitte 2D testen');}
 }
 function draw2D(){if(!ctx)return;
- const w=fb.width,h=fb.height,cx=w*.5,cy=h*.36,R=Math.min(h*.255,w*.41)*(1+.12*bass*reactivity),t=time*.3;
+ const w=fb.width,h=fb.height,cx=w*.5,cy=h*.5,R=Math.min(h*.42,w*.42)*(1+.08*bass*reactivity),t=time*.3;
  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#07080d';ctx.fillRect(0,0,w,h);
  let halo=ctx.createRadialGradient(cx,cy,R*.4,cx,cy,R*1.57);halo.addColorStop(0,'rgba(67,50,113,.15)');halo.addColorStop(.65,'rgba(92,39,153,.14)');halo.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=halo;ctx.fillRect(cx-2*R,cy-2*R,4*R,4*R);
  ctx.save();ctx.beginPath();const wave=(a)=>1+.027*Math.sin(a*7+t*1.8)+.021*Math.sin(a*11-t*2.3)+.012*Math.sin(a*17+t*2.5);
