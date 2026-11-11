@@ -140,6 +140,14 @@ def main():
     html = replace_urls(html, "https://blueyard.com/")
     html = html.replace('baseURL:"https://blueyard.com/"', 'baseURL:"/orb-lab/"')
     html = html.replace('buildAssetsDir:"/_nuxt/"', 'buildAssetsDir:"/_nuxt/"')
+    # Nuxt Image constructs image URLs at runtime; the original base points
+    # at the site root instead of the /orb-lab/ GitHub Pages project path.
+    nuxt_image_chunk = ROOT / "_nuxt" / "DNrMv7f2.js"
+    if nuxt_image_chunk.is_file():
+        chunk = nuxt_image_chunk.read_text(encoding="utf-8")
+        fixed = chunk.replace('Bt="/cdn.sanity.io/images"', 'Bt="/orb-lab/cdn.sanity.io/images"')
+        if fixed != chunk:
+            nuxt_image_chunk.write_text(fixed, encoding="utf-8")
     # The HTML itself must use the local Nuxt entrypoint and locally downloaded images.
     if FAILURES:
         (ROOT / "blueyard-capture-report.json").write_text(
