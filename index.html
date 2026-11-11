@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#07080d">
-<title>Orb Lab — The Impossible Core · WebGL Study 004</title>
+<title>Orb Lab — Living Iris · WebGL Study 005</title>
 <style>
   :root { color-scheme: dark; --muted: #9a9da9; --line: rgba(255,255,255,.10); --accent: #d6c7ff; }
   * { box-sizing: border-box; }
@@ -121,13 +121,15 @@ header { flex:none; }
  .static-orb { width:min(84vw,43svh); }
 }
 @media(max-height:620px) { .orb-stage { height:clamp(240px,55svh,370px); } }
+
+.static-orb { display:none !important; }
 </style>
 </head>
 <body>
 <div class="ui">
   <header>
     <div><div class="brand">ORB LAB</div><span class="kicker">Generative Matter Experiments</span></div>
-    <div class="edition">EXPERIMENT 004<br>REAL-TIME GENERATIVE MATTER</div>
+    <div class="edition">EXPERIMENT 005<br>REAL-TIME GENERATIVE MATTER</div>
   </header>
   <section class="orb-stage" id="orbStage" aria-label="Interaktiver Orb ohne überlagernde Bedienelemente">
     <div class="static-orb" aria-hidden="true"></div>
@@ -136,8 +138,8 @@ header { flex:none; }
   </section>
   <main class="center">
     <p class="intro">A NEW KIND OF MATTER</p>
-    <h1>The Impossible Core.</h1>
-    <p class="subtitle">Eine fremdartige Materie aus innerer Strömung, Spannung und Licht. Berühre den Kern oder speise Musik ein.</p>
+    <h1>Living Iris.</h1>
+    <p class="subtitle">Eine unmögliche Struktur: öffnende Membranen, geflochtene Energiebahnen und ein lebender Kern. Berühre sie oder aktiviere Musik.</p>
   </main>
   <aside id="debugPanel" role="region" aria-label="Sichtbare Live-Diagnose">
     <div class="debugHeading"><strong>LIVE DEBUG · IMMER SICHTBAR</strong><small>iPhone / WebGL / Canvas</small></div>
@@ -190,7 +192,7 @@ function refreshStats(){
 window.addEventListener('error',e=>report('ERROR',e.message+' @ '+(e.filename||'inline')+':'+(e.lineno||'?')));
 window.addEventListener('unhandledrejection',e=>report('ERROR','Promise: '+(e.reason?.stack||e.reason?.message||String(e.reason))));
 $('debugRestart').onclick=()=>location.reload();
-function getReport(){return ['ORB LAB / IMPOSSIBLE CORE DIAG','Timestamp: '+new Date().toISOString(),'Engine: '+renderer,'Status: '+(engineError||'OK'),'FPS: '+(fps?fps.toFixed(0):'Warte auf Frames'),'GPU: '+$('dGpu').textContent,'Canvas: '+(renderer==='Canvas 2D'?fb.width+'x'+fb.height:canvas.width+'x'+canvas.height),'Viewport: '+innerWidth+'x'+innerHeight,'Page protocol: '+location.protocol,'Secure: '+window.isSecureContext,'Audio: '+mode+(audioContext?' / '+audioContext.state:''),'UA: '+navigator.userAgent,'DPR: '+devicePixelRatio,'--- Log ---',...logLines].join('\n');}
+function getReport(){return ['ORB LAB / LIVING IRIS DIAG','Timestamp: '+new Date().toISOString(),'Engine: '+renderer,'Status: '+(engineError||'OK'),'FPS: '+(fps?fps.toFixed(0):'Warte auf Frames'),'GPU: '+$('dGpu').textContent,'Canvas: '+(renderer==='Canvas 2D'?fb.width+'x'+fb.height:canvas.width+'x'+canvas.height),'Viewport: '+innerWidth+'x'+innerHeight,'Page protocol: '+location.protocol,'Secure: '+window.isSecureContext,'Audio: '+mode+(audioContext?' / '+audioContext.state:''),'UA: '+navigator.userAgent,'DPR: '+devicePixelRatio,'--- Log ---',...logLines].join('\n');}
 $('debugCopy').onclick=async()=>{let t=getReport();try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(t);}else{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.top='0';ta.style.left='0';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,ta.value.length);if(!document.execCommand('copy'))throw Error('Kopieren nicht möglich');ta.remove();}say('Diagnose kopiert – hier in den Chat einfügen.');}catch(e){report('WARN','Copy: '+e.message);const field=$('debugLogs');field.value=t;field.focus();field.select();say('Kopieren blockiert. Den Text in der sichtbaren Box markieren und kopieren.');}};
 function turn2D(reason){
  if(renderer==='Canvas 2D')return;
@@ -213,117 +215,154 @@ uniform vec2 uRes;
 uniform float uTime,uBass,uMid,uHigh,uEnergy,uOnset,uTouch,uSeed,uSensitivity,uQuality;
 uniform vec2 uTouchPos;
 uniform float uScale;
+
+#define PI 3.14159265358979
 float sat(float x){return clamp(x,0.,1.);}
-float h3(vec3 p){p=fract(p*.1031);p+=dot(p,p.yzx+31.32);return fract((p.x+p.y)*p.z);}
-float n3(vec3 p){
- vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
- return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),
- mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z);
-}
 mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
-float shape(vec3 p){
- float t=uTime*.26;vec3 q=p;
- q.xz=rot(.16*sin(t*.29)+uMid*.13)*q.xz;
- float belt=sin(q.x*4.2+q.y*3.1+sin(q.z*4.7+t)*1.5-t*.68);
- float knot=sin(q.z*7.3-q.y*3.8+sin(q.x*5.1-t*.7)*1.8+t*.42);
- float tide=sin(q.x*2.9-q.z*3.6+t*.6)*sin(q.y*4.1+t*.53);
- float pressure=.022*uBass*uSensitivity+.010*uOnset;
- return length(p)-(.902+.034*belt*knot+.018*tide+pressure);
+float hash21(vec2 p){p=fract(p*vec2(123.34,345.45));p+=dot(p,p+34.345);return fract(p.x*p.y);}
+float breathing(float t){return .5+.5*sin(t*.53)+.11*sin(t*1.13);}
+vec3 deform(vec3 p,float t){
+  p.xy=rot(.17*sin(t*.28)+.08*uMid)*p.xy;
+  p.yz=rot(.10*sin(t*.33+.6))*p.yz;
+  return p;
 }
-vec3 normalAt(vec3 p){
- float e=.005;
- return normalize(vec3(shape(p+vec3(e,0,0))-shape(p-vec3(e,0,0)),
- shape(p+vec3(0,e,0))-shape(p-vec3(0,e,0)),
- shape(p+vec3(0,0,e))-shape(p-vec3(0,0,e))));
+float membrane(vec3 p,float t){
+  vec3 q=deform(p,t);
+  float th=atan(q.y,q.x), ph=atan(q.z,length(q.xy));
+  float folds=sin(5.*th+3.*ph+.65*sin(3.*ph-t*.6)+t*.25);
+  float subfold=sin(9.*th-4.*ph-t*.38);
+  float radius=.91+.043*folds+.018*subfold+.021*breathing(t);
+  float skin=abs(length(q)-radius)-(.019+.016*(.5+.5*sin(7.*th+5.*ph+t*.48)));
+  float ribbons=sin(6.*th+2.3*ph+1.5*sin(3.*ph-t*.31)-t*.21);
+  float openings=(.49+.12*sin(t*.42)-abs(ribbons))*.21;
+  float irisAperture=(.29+.10*sin(t*.43)) - length(q.xy);
+  return max(skin,max(openings,irisAperture*.6));
 }
-vec3 energyFlow(vec3 q,float t){
- q.xz=rot(t*.18+.31*sin(q.y*1.7+t*.4))*q.xz;
- q.xy=rot(-t*.11+.22*cos(q.z*1.3-t*.37))*q.xy;
- vec3 w=vec3(sin(q.y*3.9+q.z*3.1+t*.42),sin(q.z*4.7-q.x*2.8-t*.5),sin(q.x*3.4+q.y*4.2+t*.36));
- return q+w*.23;
+float orbit(vec3 p,float t,float variant){
+  vec3 q=p;
+  if(variant<.5){q.xy=rot(.34+sin(t*.21)*.21)*q.xy;q.xz=rot(.62+sin(t*.18)*.19)*q.xz;}
+  else if(variant<1.5){q.yz=rot(1.08+sin(t*.17)*.23)*q.yz;q.xy=rot(-.31+sin(t*.23)*.2)*q.xy;}
+  else {q.xz=rot(1.82+t*.07)*q.xz;q.yz=rot(.67+sin(t*.16)*.17)*q.yz;}
+  float theta=atan(q.y,q.x);
+  float radial=length(q.xy);
+  float wave=sin(5.*theta-t*(variant<.5?.56:.38)+variant*1.9);
+  float wave2=sin(9.*theta+t*.37+variant*2.2);
+  float R=.75+.043*wave+.018*wave2;
+  float ribbonThickness=.065+.020*(.5+.5*sin(4.*theta-t*.48+variant));
+  return length(vec2(radial-R,q.z*.86)) - ribbonThickness;
 }
-vec3 tonemap(vec3 c){c=1.-exp(-max(c,vec3(0.))*1.52);return pow(c,vec3(.91));}
+vec2 map(vec3 p){
+  float t=uTime*.48;
+  float a=membrane(p,t);
+  float d1=orbit(p,t,0.);
+  float d2=orbit(p,t,1.);
+  float d3=orbit(p,t,2.);
+  float sphere=length(p)-(.34+.025*sin(t*.65)+.017*uBass*uSensitivity);
+  vec2 r=vec2(a,0.);
+  if(d1<r.x)r=vec2(d1,1.);
+  if(d2<r.x)r=vec2(d2,2.);
+  if(d3<r.x)r=vec2(d3,3.);
+  if(sphere<r.x)r=vec2(sphere,4.);
+  return r;
+}
+vec3 calcNormal(vec3 p){
+  float e=.0025;
+  return normalize(vec3(
+     map(p+vec3(e,0.,0.)).x-map(p-vec3(e,0.,0.)).x,
+     map(p+vec3(0.,e,0.)).x-map(p-vec3(0.,e,0.)).x,
+     map(p+vec3(0.,0.,e)).x-map(p-vec3(0.,0.,e)).x));
+}
+vec3 softtone(vec3 x){return pow(1.-exp(-max(x,vec3(0.))*1.45),vec3(.88));}
+vec3 shade(vec3 p,vec3 N,vec3 V,float id,float t){
+  float ndv=sat(dot(N,V));
+  float edge=pow(1.-ndv,2.2);
+  vec3 L1=normalize(vec3(-.65,.78,1.10)), L2=normalize(vec3(.68,-.66,.75)),L3=normalize(vec3(.12,.27,-1.));
+  float diff=sat(dot(N,L1)),fill=sat(dot(N,L2));
+  float spec=pow(sat(dot(reflect(-L1,N),V)),48.);
+  float spec2=pow(sat(dot(reflect(-L2,N),V)),92.);
+  vec3 ink=vec3(.006,.013,.028);
+  vec3 gold=vec3(1.7,.69,.22);
+  vec3 ice=vec3(.38,1.25,1.68);
+  vec3 violet=vec3(.75,.27,1.18);
+  vec3 pearl=vec3(1.1,1.42,1.6);
+  vec3 q=deform(p,t*.45);
+  float theta=atan(q.y,q.x);
+  float spin=sin(theta*15.+q.z*12.-t*.82+sin(q.y*8.+t*.2)*3.);
+  float vein=pow(1.-abs(spin),19.);
+  float finer=pow(1.-abs(sin(q.y*31.-q.x*18.+t*.54+sin(q.z*11.+t*.8)*4.)),29.);
+  float thermal=.5+.5*sin(4.*theta+q.z*12.-t*.36+1.2*sin(q.x*7.));
+  vec3 col;
+  if(id<.5){
+    // Hollow folded black-metal membrane: gold edges and icy interference rather than hue rotation.
+    col=mix(ink,vec3(.035,.075,.116),.22+.58*thermal);
+    col*=.40+.82*diff+.21*fill;
+    col+=ice*(.23+.85*thermal)*edge;
+    col+=gold*(vein*.70+finer*.14)*(.32+.8*diff);
+    col+=pearl*(spec*.70+spec2*.40);
+    col+=violet*.10*pow(1.-diff,2.);
+  }else if(id<3.5){
+    // Braided metallic orbits, with warm/cold optical interference, different for each ring.
+    float phase=.5+.5*sin(theta*7.+q.z*16.+t*.22+id*2.);
+    col=mix(vec3(.019,.045,.075),vec3(.12,.21,.28),phase*.60);
+    col*=.39+.67*diff+.29*fill;
+    col+=mix(ice,gold,phase*.76)*(edge*.84+vein*.26);
+    col+=pearl*(spec*.98+spec2*.55);
+    col+=gold*finer*.13;
+    col+=violet*(1.-phase)*edge*.15;
+  }else{
+    // Black central singularity remains optically deep, with restrained breathing filaments.
+    float gy=sin(q.x*14.+t*.35)*cos(q.y*16.-t*.41)+sin(q.z*18.+q.y*7.-t*.19);
+    float seam=exp(-abs(gy-.11)*11.);
+    col=ink*.28+vec3(.012,.021,.044)*(.5+.5*thermal);
+    col+=ice*seam*(.65+.44*uEnergy*uSensitivity);
+    col+=gold*pow(seam,4.)*.72;
+    col+=violet*edge*.43;
+    col+=pearl*spec*.11;
+  }
+  return col;
+}
 void main(){
- vec2 p=(vUV-vec2(.5,.5))*vec2(uRes.x/uRes.y,1.)*uScale;
- float radius=length(p),t=uTime*.34;
- vec3 bg=vec3(.0021,.0030,.0072);
- bg+=vec3(.012,.022,.039)*exp(-radius*radius)*.30;
- float fringe=exp(-max(radius-.84,0.)*6.4)*(1.-smoothstep(.88,1.51,radius));
- vec3 col=bg+fringe*vec3(.020,.049,.079)*(.58+.42*sin(uTime*.29));
- vec3 ro=vec3(0.,0.,2.80),rd=normalize(vec3(p,-2.80));
- float b=dot(ro,rd),h=b*b-dot(ro,ro)+1.13*1.13;
- if(h<0.){
-   float grain=(h3(vec3(gl_FragCoord.xy,floor(uTime*23.)))-.5)/370.;
-   frag=vec4(tonemap(col)+grain,1.);return;
- }
- float travel=max(0.,-b-sqrt(h));
- bool hit=false;vec3 pos=ro+rd*travel;
- for(int i=0;i<27;i++){
-   float d=shape(pos);
-   if(d<.0020){hit=true;break;}
-   travel+=clamp(d*.78,.0035,.092);
-   if(travel>4.4)break;
-   pos=ro+rd*travel;
- }
- if(!hit){frag=vec4(tonemap(col),1.);return;}
- vec3 N=normalAt(pos),V=-rd;
- float ndv=sat(dot(N,V)),fres=pow(1.-ndv,2.8);
- vec3 lightA=normalize(vec3(-.64,.72,1.10)),lightB=normalize(vec3(.8,-.45,.64));
- float key=sat(dot(N,lightA)),fill=sat(dot(N,lightB));
- float spec=pow(sat(dot(reflect(-lightA,N),V)),35.);
- float specB=pow(sat(dot(reflect(-lightB,N),V)),83.);
- vec3 q=energyFlow(pos*1.84+vec3(0.,t*.21,0.),t);
- float turbulence=n3(q*2.35+vec3(t*.15,-t*.12,0.));
- float undertow=n3(q*4.5+vec3(9.7,-t*.24,3.));
- float ribbons=sin(q.y*11.2+q.x*6.4+sin(q.z*5.3-t)*3.8-t*2.1);
- float ribbons2=sin(q.z*14.2-q.y*7.3+sin(q.x*5.2+t*.7)*3.7+t*.9);
- float seam=pow(1.-abs(ribbons),24.),fine=pow(1.-abs(ribbons2),45.);
- float basin=sat(.55*turbulence+.34*undertow+.10);
- float cavity=pow(sat(.72-basin),1.7);
- vec3 obsidian=vec3(.008,.017,.035),midnight=vec3(.021,.042,.084),abyssBlue=vec3(.034,.095,.174);
- vec3 coolSilver=vec3(.28,.57,.68),violet=vec3(.205,.105,.28),spectral=vec3(.08,.73,.76),honey=vec3(.98,.57,.19);
- vec3 material=mix(obsidian,midnight,sat(.16+basin*1.45));
- material=mix(material,abyssBlue,pow(basin,2.)*.74);
- material*=.54+.68*key+.20*fill;
- material*=1.-.60*cavity;
- material+=violet*.14*pow(sat(1.-basin),3.);
- float torsion=sat(.5+.5*sin(q.x*2.9-q.z*2.7+t*.34));
- material+=coolSilver*(seam*.13+fine*.075)*(.28+.72*key);
- material+=spectral*(seam*.27+fine*.14)*(mix(.6,1.5,torsion))*(.27+.73*key);
- vec3 volume=vec3(0.);float density=0.;
- for(int j=0;j<10;j++){
-   if(uQuality<.5 && j>=6)break;
-   float jx=float(j);
-   vec3 s=pos+rd*(.10+jx*.145);
-   float body=sat((.92-length(s))*15.);
-   if(body<.01)continue;
-   vec3 f=energyFlow(s*2.36+vec3(2.1,-t*.4,0.),t*.95);
-   float waveA=sin(f.x*12.4+f.z*8.7+sin(f.y*6.4+t)*4.8-t*1.7);
-   float waveB=sin(f.y*16.5-f.x*8.2+cos(f.z*5.4-t*.6)*4.3+t*1.2);
-   float sheet=exp(-pow(abs(waveA)*8.0,1.2));
-   float capillary=exp(-pow(abs(waveB)*11.0,1.25));
-   float luminance=body*exp(-jx*.19)*(sheet*.53+capillary*.31);
-   float pulse=.74+.26*sin(f.x*2.0+t*1.3);
-   volume+=(spectral*(.7+.45*pulse)+violet*.34)*luminance;
-   volume+=honey*pow(sheet*capillary,1.35)*body*.25;
-   density+=luminance;
- }
- volume*=.32+uEnergy*.25*uSensitivity;
- material=mix(material,material*.40,.24*sat(density));
- material+=volume*(.46+.36*fres+.36*sat(1.-ndv));
- float interference=.5+.5*cos((1.-ndv)*14.0+undertow*4.0+uTime*.15);
- vec3 film=mix(vec3(.10,.61,.71),vec3(.59,.27,.73),interference);
- material+=film*fres*(.15+.18*turbulence+.13*uHigh*uSensitivity);
- material+=coolSilver*(spec*.19+specB*.09);
- material+=spectral*pow(fres,2.)*.18;
- float scar=pow(1.-abs(sin(q.x*9.1-q.y*10.3+undertow*13.2+t*.7)),53.);
- material+=honey*scar*seam*(.02+.11*uOnset+.10*uTouch);
- float tapDistance=length(p-uTouchPos);
- float tapWave=exp(-abs(tapDistance-(.18+(1.-uTouch)*.60))*34.)*uTouch;
- material+=vec3(.35,.73,.88)*tapWave*.36;
- col+=material+vec3(.032,.080,.11)*fres*.10;
- float grain=(h3(vec3(gl_FragCoord.xy,floor(uTime*23.)))-.5)/360.;
- frag=vec4(tonemap(col)+grain,1.);
+  vec2 p=(vUV-vec2(.5,.5))*vec2(uRes.x/uRes.y,1.)*uScale;
+  float rr=length(p),t=uTime;
+  vec3 col=vec3(.0017,.0028,.0060);
+  col+=vec3(.010,.027,.044)*exp(-rr*rr*1.30);
+  col+=vec3(.028,.076,.100)*exp(-pow((rr-.84)*3.5,2.))*.11;
+  // Subtle reflected field around material, never a foggy big halo.
+  col+=vec3(.017,.057,.081)*exp(-abs(rr-.92)*12.0)*(.10+.12*uEnergy);
+  vec3 ro=vec3(0.,0.,3.40);
+  vec3 rd=normalize(vec3(p,-2.80));
+  float b=dot(ro,rd),h=b*b-dot(ro,ro)+1.17*1.17;
+  if(h<0.){frag=vec4(softtone(col),1.);return;}
+  float travel=max(0.,-b-sqrt(h));
+  bool hit=false;
+  vec3 pos=ro;
+  vec2 surf=vec2(0.);
+  for(int i=0;i<67;i++){
+    pos=ro+rd*travel;
+    surf=map(pos);
+    if(surf.x<.0019){hit=true;break;}
+    travel+=clamp(surf.x*.67,.0028,.078);
+    if(travel>4.65)break;
+  }
+  if(hit){
+    vec3 N=calcNormal(pos);
+    vec3 V=-rd;
+    vec3 material=shade(pos,N,V,surf.y,t);
+    // Translucent-looking glow from fine flow between components.
+    float aura=exp(-max(0.,length(pos)-.6)*4.);
+    material+=vec3(.035,.095,.12)*aura*.13;
+    // A short non-destructive interaction wave.
+    float ripple=length(p-uTouchPos);
+    float wave=exp(-abs(ripple-(.14+.78*(1.-uTouch)))*29.)*uTouch;
+    material+=vec3(.15,.75,.91)*wave*.36;
+    col+=material;
+  }else{
+    // Interior light appears only through actual gaps in the warped shell.
+    float ghost=exp(-rr*rr*4.5);
+    col+=vec3(.015,.057,.070)*ghost*.16;
+  }
+  float grain=(hash21(gl_FragCoord.xy+floor(t*17.))-.5)*.0015;
+  frag=vec4(softtone(col)+grain,1.);
 }`;
 function compile(g,type,src){const shader=g.createShader(type);g.shaderSource(shader,src);g.compileShader(shader);if(!g.getShaderParameter(shader,g.COMPILE_STATUS)){const msg=g.getShaderInfoLog(shader)||'Unbekannter GLSL-Fehler';g.deleteShader(shader);throw Error((type===g.FRAGMENT_SHADER?'Fragment':'Vertex')+' Shader: '+msg);}return shader;}
 function initGL(){
