@@ -1,5 +1,30 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#080a11"><title>Orb Lab — Computing</title></head>
-<body style="margin:0;background:#080a11;color:#f3f2f8;font-family:system-ui,sans-serif">
-<script src="./orb-scene-loader.js" data-scene="computing"></script>
+<html lang="en" data-model="computing">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a11">
+<title>Orb Lab · Computing</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#080a11;color:#f1f2f7;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:40px 18px}
+h1{font-size:12px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#b3bacd;margin:0}
+.orb-wrap{position:relative;width:min(320px,80vw,56svh);aspect-ratio:1;display:grid;place-items:center}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#status{position:absolute;inset:auto 0 16px;text-align:center;font-size:11px;line-height:1.6;color:#979eae;pointer-events:none}
+#status.error{color:#f2a3a3}
+footer{font-size:10px;letter-spacing:.07em;color:#777d8e}
+@media(prefers-reduced-motion:reduce){canvas{animation:none}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+</head>
+<body><main>
+<h1>Computing</h1>
+<div class="orb-wrap"><canvas id="orb" aria-label="Computing GLB orb"></canvas><p id="status">Lade Original-GLB…</p></div>
+<footer>ORB LAB · GLB GEOMETRY STUDY</footer>
+</main>
+<script type="module" src="./orb-model-viewer.js"></script>
 </body></html>
